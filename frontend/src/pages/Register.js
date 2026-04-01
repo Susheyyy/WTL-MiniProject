@@ -5,11 +5,13 @@ import { register } from '../api';
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'user' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       const { data } = await register(formData);
       localStorage.setItem('token', data.token);
@@ -17,63 +19,82 @@ const Register = () => {
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page-wrapper">
+    <div className="auth-wrapper">
       <div className="auth-card">
-        <h2>Create Account</h2>
-        <p>Join the discovery platform today</p>
+        <p className="auth-eyebrow">Get started</p>
+        <h2>Create account</h2>
+        <p className="auth-sub">Join LocalDistro and discover what's near you.</p>
 
-        {error && (
-          <p style={{ color: '#dc2626', background: '#fef2f2', padding: '10px 14px', borderRadius: '8px', fontSize: '14px', marginBottom: '10px' }}>
-            {error}
-          </p>
-        )}
+        {error && <div className="alert alert-error" style={{ marginBottom: '16px' }}>{error}</div>}
 
-        <form className="form-group" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Full Name"
-            required
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          />
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="field-group">
+            <label className="field-label" htmlFor="name">Full name</label>
+            <input
+              id="name"
+              type="text"
+              className="field-input"
+              placeholder="Jane Smith"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
 
-          <div>
-            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '8px' }}>
-              I am a:
-            </label>
+          <div className="field-group">
+            <label className="field-label" htmlFor="email">Email address</label>
+            <input
+              id="email"
+              type="email"
+              className="field-input"
+              placeholder="you@example.com"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="field-input"
+              placeholder="At least 8 characters"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="role">I am a</label>
             <select
+              id="role"
+              className="field-input field-select"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             >
-              <option value="user">Customer (Looking for businesses)</option>
-              <option value="owner">Business Owner (Listing a business)</option>
+              <option value="user">Customer — looking for businesses</option>
+              <option value="owner">Business owner — listing a business</option>
             </select>
           </div>
 
-          <button type="submit" className="btn-primary-full">Register</button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading && <span className="spinner" />}
+            {loading ? 'Creating account...' : 'Create account'}
+          </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#6b7280' }}>
-          Already have an account? <Link to="/login" style={{ color: '#2563eb', fontWeight: '600' }}>Sign in</Link>
-        </p>
+        <div className="auth-footer">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </div>
       </div>
     </div>
   );

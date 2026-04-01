@@ -2,37 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createBusiness } from '../api';
 
+const CATEGORIES = ['Cafe', 'Restaurant', 'Gym', 'Salon', 'Bakery', 'Shop', 'Other'];
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', category: '', description: '', address: '', lng: '', lat: '' });
+  const [form, setForm] = useState({
+    name: '', category: 'Cafe', description: '', address: '', lng: '', lat: '',
+  });
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
 
-  // Owner guard — redirect non-owners away
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) {
-      navigate('/login');
-    } else if (user.role !== 'owner') {
-      navigate('/');
-    }
+    if (!user) navigate('/login');
+    else if (user.role !== 'owner') navigate('/');
   }, [navigate]);
+
+  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMsg({ text: '', type: '' });
     try {
-      await createBusiness({
-        ...form,
-        lng: parseFloat(form.lng),
-        lat: parseFloat(form.lat),
-      });
-      setMsg({ text: 'Business listed successfully!', type: 'success' });
-      setForm({ name: '', category: '', description: '', address: '', lng: '', lat: '' });
+      await createBusiness({ ...form, lng: parseFloat(form.lng), lat: parseFloat(form.lat) });
+      setMsg({ text: 'Business listed successfully! It will appear in search results.', type: 'success' });
+      setForm({ name: '', category: 'Cafe', description: '', address: '', lng: '', lat: '' });
     } catch (err) {
       setMsg({
-        text: err.response?.data?.message || 'Failed to add business. Check all fields and try again.',
+        text: err.response?.data?.message || 'Failed to add business. Check all fields.',
         type: 'error',
       });
     } finally {
@@ -40,85 +38,77 @@ const Dashboard = () => {
     }
   };
 
-  const inputStyle = { marginBottom: '12px' };
-
   return (
-    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-      <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '6px' }}>Business Dashboard</h2>
-      <p style={{ color: '#6b7280', marginBottom: '24px' }}>List your business to reach local customers.</p>
-      <hr style={{ margin: '0 0 24px', border: '0', borderTop: '1px solid #e5e7eb' }} />
+    <div className="dashboard-wrapper">
+      <p className="page-eyebrow">Owner dashboard</p>
+      <h1 className="page-title">List your business</h1>
+      <p className="page-sub">Fill in the details below to make your business discoverable to nearby customers.</p>
 
       {msg.text && (
-        <p style={{
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          fontSize: '14px',
-          backgroundColor: msg.type === 'success' ? '#f0fdf4' : '#fef2f2',
-          color: msg.type === 'success' ? '#166534' : '#dc2626',
-          border: `1px solid ${msg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-        }}>
-          {msg.type === 'success' ? '✅' : '❌'} {msg.text}
-        </p>
+        <div className={`alert alert-${msg.type}`} style={{ marginBottom: '24px' }}>
+          {msg.text}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <input
-          style={inputStyle}
-          placeholder="Business Name"
-          value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })}
-          required
-        />
-        <input
-          style={inputStyle}
-          placeholder="Category (e.g. Cafe, Gym)"
-          value={form.category}
-          onChange={e => setForm({ ...form, category: e.target.value })}
-          required
-        />
-        <textarea
-          placeholder="Short Description"
-          value={form.description}
-          style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', height: '100px', marginBottom: '12px', fontSize: '1rem', boxSizing: 'border-box', resize: 'vertical' }}
-          onChange={e => setForm({ ...form, description: e.target.value })}
-        />
-        <input
-          style={inputStyle}
-          placeholder="Address"
-          value={form.address}
-          onChange={e => setForm({ ...form, address: e.target.value })}
-          required
-        />
+      <div className="form-card">
+        <p className="form-card-title">Business details</p>
+        <form className="dashboard-form" onSubmit={handleSubmit}>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-          <input
-            type="number"
-            step="any"
-            placeholder="Longitude"
-            value={form.lng}
-            onChange={e => setForm({ ...form, lng: e.target.value })}
-            required
-          />
-          <input
-            type="number"
-            step="any"
-            placeholder="Latitude"
-            value={form.lat}
-            onChange={e => setForm({ ...form, lat: e.target.value })}
-            required
-          />
-        </div>
+          <div className="field-group">
+            <label className="field-label" htmlFor="name">Business name</label>
+            <input
+              id="name" className="field-input" placeholder="e.g. Blue Bottle Coffee"
+              value={form.name} onChange={set('name')} required
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary-full"
-          style={{ width: '100%', opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
-        >
-          {loading ? 'Adding...' : 'Add Business'}
-        </button>
-      </form>
+          <div className="field-group">
+            <label className="field-label" htmlFor="category">Category</label>
+            <select id="category" className="field-input field-select" value={form.category} onChange={set('category')}>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="desc">Short description</label>
+            <textarea
+              id="desc" className="field-input field-textarea"
+              placeholder="What makes your business special?"
+              value={form.description} onChange={set('description')}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="address">Address</label>
+            <input
+              id="address" className="field-input" placeholder="123 Main Street, City"
+              value={form.address} onChange={set('address')} required
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="field-group">
+              <label className="field-label" htmlFor="lng">Longitude</label>
+              <input
+                id="lng" type="number" step="any" className="field-input" placeholder="e.g. 72.8777"
+                value={form.lng} onChange={set('lng')} required
+              />
+            </div>
+            <div className="field-group">
+              <label className="field-label" htmlFor="lat">Latitude</label>
+              <input
+                id="lat" type="number" step="any" className="field-input" placeholder="e.g. 19.0760"
+                value={form.lat} onChange={set('lat')} required
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="btn-accent" disabled={loading}>
+            {loading && <span className="spinner" />}
+            {loading ? 'Saving...' : 'Add business'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

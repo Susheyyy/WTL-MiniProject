@@ -10,19 +10,24 @@ const Navbar = () => {
   };
 
   return (
-    <nav style={{ padding: '15px 40px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Link to="/" style={{ fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', color: '#000' }}>LocalDistro</Link>
-      <div>
+    <nav className="navbar">
+      <Link to="/" className="nav-logo">
+        Local<span>Distro</span>
+      </Link>
+
+      <div className="nav-links">
         {user ? (
           <>
-            <span style={{ marginRight: '15px', fontSize: '14px' }}>Hi, {user.name}</span>
-            {user.role === 'owner' && <Link to="/dashboard" style={{ marginRight: '15px' }}>Dashboard</Link>}
-            <button onClick={logout} style={{ background: 'none', border: '1px solid #ccc', padding: '5px 10px', cursor: 'pointer' }}>Logout</button>
+            <span className="nav-user">Hi, {user.name}</span>
+            {user.role === 'owner' && (
+              <Link to="/dashboard" className="nav-link">Dashboard</Link>
+            )}
+            <button onClick={logout} className="btn-nav-logout">Log out</button>
           </>
         ) : (
           <>
-            <Link to="/login" style={{ marginRight: '15px' }}>Login</Link>
-            <Link to="/register" className="btn-primary" style={{ textDecoration: 'none' }}>Register</Link>
+            <Link to="/login" className="nav-link">Sign in</Link>
+            <Link to="/register" className="btn-nav-cta">Get started</Link>
           </>
         )}
       </div>

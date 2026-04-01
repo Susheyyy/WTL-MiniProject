@@ -5,11 +5,13 @@ import { login } from '../api';
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       const { data } = await login(formData);
       localStorage.setItem('token', data.token);
@@ -17,33 +19,59 @@ const Login = () => {
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
- return (
-  <div className="auth-page-wrapper">
-    <div className="auth-card">
-      <h2>Welcome back</h2>
-      <p>Enter your details to sign in</p>
-      <form className="form-group" onSubmit={handleSubmit}>
-       <input 
-  type="email" 
-  placeholder="Email address" 
-  required 
-  value={formData.email}
-  onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
-/>
-<input 
-  type="password" 
-  placeholder="Password" 
-  required 
-  value={formData.password}
-  onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-/> <button type="submit" className="btn-primary-full">Sign In</button>
-      </form>
+  return (
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <p className="auth-eyebrow">Welcome back</p>
+        <h2>Sign in</h2>
+        <p className="auth-sub">Good to see you again. Enter your details below.</p>
+
+        {error && <div className="alert alert-error" style={{ marginBottom: '16px' }}>{error}</div>}
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="field-group">
+            <label className="field-label" htmlFor="email">Email address</label>
+            <input
+              id="email"
+              type="email"
+              className="field-input"
+              placeholder="you@example.com"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="field-input"
+              placeholder="••••••••"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+          </div>
+
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading && <span className="spinner" />}
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          Don't have an account? <Link to="/register">Create one</Link>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default Login;
