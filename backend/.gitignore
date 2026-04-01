@@ -1,0 +1,25 @@
+# Secrets (Most Important)
+.env
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+
+# Debug & Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDE Settings
+.vscode/
+.idea/
+
+# Testing
+coverage/
