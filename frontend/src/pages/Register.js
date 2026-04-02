@@ -18,7 +18,13 @@ const Register = () => {
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      if (err.response) {
+        setError(err.response.data?.message || `Server error: ${err.response.status}`);
+      } else if (err.request) {
+        setError('Cannot reach the server. Make sure your backend is running on port 5000.');
+      } else {
+        setError(err.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,6 +48,7 @@ const Register = () => {
               className="field-input"
               placeholder="Jane Smith"
               required
+              autoComplete="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
@@ -55,6 +62,7 @@ const Register = () => {
               className="field-input"
               placeholder="you@example.com"
               required
+              autoComplete="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
@@ -68,6 +76,7 @@ const Register = () => {
               className="field-input"
               placeholder="At least 8 characters"
               required
+              autoComplete="new-password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
@@ -88,7 +97,7 @@ const Register = () => {
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading && <span className="spinner" />}
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>
 
