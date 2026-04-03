@@ -18,7 +18,15 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      if (err.response) {
+        // Server responded with an error status
+        setError(err.response.data?.message || `Server error: ${err.response.status}`);
+      } else if (err.request) {
+        // Request was made but no response received — server is down or CORS blocked
+        setError('Cannot reach the server. Make sure your backend is running on port 5000.');
+      } else {
+        setError(err.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,6 +50,7 @@ const Login = () => {
               className="field-input"
               placeholder="you@example.com"
               required
+              autoComplete="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
@@ -55,6 +64,7 @@ const Login = () => {
               className="field-input"
               placeholder="••••••••"
               required
+              autoComplete="current-password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
@@ -62,7 +72,7 @@ const Login = () => {
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading && <span className="spinner" />}
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 

@@ -151,6 +151,17 @@ router.delete('/:id', protect, authorize('owner'), async (req, res) => {
  * @route   POST /api/businesses/:id/reviews
  * @desc    Add a review (one per user per business)
  */
+
+// Get businesses owned by the current user
+router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
+  try {
+    const businesses = await Business.find({ owner: req.user.id });
+    res.json(businesses);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching your businesses' });
+  }
+});
+
 router.post('/:id/reviews', protect, async (req, res) => {
   try {
     const { rating, comment } = req.body;
