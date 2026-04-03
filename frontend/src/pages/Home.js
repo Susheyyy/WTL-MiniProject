@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { fetchBusinesses } from '../api';
+import { fetchBusinesses, addReview } from '../api';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -35,6 +35,11 @@ const Home = () => {
   const [searched, setSearched] = useState(false);
   const [userCoords, setUserCoords] = useState(null);
   const [fetchError, setFetchError] = useState('');
+  
+  // Review States
+  const [selectedBusiness, setSelectedBusiness] = useState(null); 
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const user = JSON.parse(localStorage.getItem('user'));
 
   const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
     setLoading(true);
@@ -53,6 +58,20 @@ const Home = () => {
         setSearched(true);
       })
       .finally(() => setLoading(false));
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await addReview(selectedBusiness._id, reviewForm);
+      alert("Review posted successfully!");
+      setSelectedBusiness(null);
+      setReviewForm({ rating: 5, comment: '' });
+      // Refresh to show updated ratings
+      if (userCoords) doSearch(userCoords.lat, userCoords.lng); 
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to post review");
+    }
   };
 
   const getNearby = () => {
@@ -92,11 +111,9 @@ const Home = () => {
 
   return (
     <>
-      {/* Hero */}
       <div className="home-hero">
         <h1>Find what's <em>near you.</em></h1>
         <p>Discover local businesses, read reviews, and explore your neighbourhood with ease.</p>
-
         <div className="search-bar">
           <input type="text" placeholder="Cafes, gyms, restaurants near me…" readOnly />
           <button className="btn-search" onClick={getNearby} disabled={loading}>
@@ -105,7 +122,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="filter-row">
         <span className="filter-label">Category</span>
         {CATEGORIES.map(cat => (
@@ -114,7 +130,6 @@ const Home = () => {
             {CATEGORY_EMOJI[cat]} {cat}
           </button>
         ))}
-
         <span className="filter-label" style={{ marginLeft: '8px' }}>Radius</span>
         {DISTANCES.map(d => (
           <button key={d.value} className={`chip${activeDist === d.value ? ' active' : ''}`}
@@ -124,26 +139,21 @@ const Home = () => {
         ))}
       </div>
 
-      {/* Results */}
       <div className="businesses-section">
-
         {fetchError && (
-          <div className="alert alert-error" style={{ marginBottom: '24px' }}>
-            {fetchError}
-          </div>
+          <div className="alert alert-error" style={{ marginBottom: '24px' }}>{fetchError}</div>
         )}
 
         {businesses.length > 0 && (
           <div className="section-header">
-            <h2 className="section-title">
-              {activeCategory ? `${activeCategory}s` : 'Nearby businesses'}
-            </h2>
+            <h2 className="section-title">{activeCategory ? `${activeCategory}s` : 'Nearby businesses'}</h2>
             <span className="section-count">
               {businesses.length} found within {DISTANCES.find(d => d.value === activeDist)?.label}
             </span>
           </div>
         )}
 
+        {/* LOADING STATE */}
         {loading && (
           <div className="empty-state">
             <div className="empty-icon">🔍</div>
@@ -152,6 +162,7 @@ const Home = () => {
           </div>
         )}
 
+        {/* SEARCHED BUT NOTHING FOUND */}
         {!loading && searched && !fetchError && businesses.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">🗺️</div>
@@ -169,18 +180,14 @@ const Home = () => {
               )}
             </p>
             {userCoords && (
-  <MapContainer center={[userCoords.lat, userCoords.lng]} zoom={13} style={{ height: '400px', borderRadius: '15px' }}>
-    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-    {businesses.map(b => (
-      <Marker key={b._id} position={[b.location.coordinates[1], b.location.coordinates[0]]}>
-        <Popup>{b.name}</Popup>
-      </Marker>
-    ))}
-  </MapContainer>
-)}
+              <MapContainer center={[userCoords.lat, userCoords.lng]} zoom={13} style={{ height: '400px', borderRadius: '15px', marginTop: '20px' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              </MapContainer>
+            )}
           </div>
         )}
 
+        {/* INITIAL STATE: READY TO EXPLORE */}
         {!loading && !searched && !fetchError && (
           <div className="empty-state">
             <div className="empty-icon">🏘️</div>
@@ -189,12 +196,27 @@ const Home = () => {
           </div>
         )}
 
+        {/* MAP FOR SUCCESSFUL RESULTS */}
+        {!loading && userCoords && businesses.length > 0 && (
+          <MapContainer center={[userCoords.lat, userCoords.lng]} zoom={13} style={{ height: '400px', borderRadius: '15px', marginBottom: '30px' }}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            {businesses.map(b => (
+              <Marker key={b._id} position={[b.location.coordinates[1], b.location.coordinates[0]]}>
+                <Popup>
+                  <strong>{b.name}</strong><br/>
+                  {b.address}<br/>
+                  {user && <button onClick={() => setSelectedBusiness(b)} style={{marginTop: '5px', cursor: 'pointer'}}>Write Review</button>}
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
+
+        {/* BUSINESS GRID */}
         <div className="business-grid">
           {!loading && businesses.map((b) => (
             <div key={b._id} className="card">
-              <div className="card-thumb">
-                {CATEGORY_EMOJI[b.category] || '📍'}
-              </div>
+              <div className="card-thumb">{CATEGORY_EMOJI[b.category] || '📍'}</div>
               <div className="card-body">
                 <span className="category-badge">{b.category}</span>
                 <h3 className="card-title">{b.name}</h3>
@@ -202,20 +224,43 @@ const Home = () => {
                 <div className="card-footer">
                   <span>📍 {b.address}</span>
                   <span className="card-rating">
-                    <span className="star">★</span>
-                    {b.avgRating ? Number(b.avgRating).toFixed(1) : '—'}
-                    {b.reviewCount > 0 && (
-                      <span style={{ fontWeight: 400, color: 'var(--ink-muted)', marginLeft: 2 }}>
-                        ({b.reviewCount})
-                      </span>
-                    )}
+                    <span className="star">★</span> {b.avgRating ? Number(b.avgRating).toFixed(1) : '—'}
+                    {b.reviewCount > 0 && <span style={{ fontWeight: 400, color: 'var(--ink-muted)', marginLeft: 2 }}>({b.reviewCount})</span>}
                   </span>
                 </div>
+                {user && (
+                  <button className="btn-accent" style={{ marginTop: '15px', padding: '8px', fontSize: '0.8rem', width: '100%' }} onClick={() => setSelectedBusiness(b)}>
+                    Write a Review
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* REVIEW MODAL */}
+      {selectedBusiness && (
+        <div className="modal-overlay">
+          <div className="auth-card" style={{ maxWidth: '450px' }}>
+            <h2 className="page-title">Review {selectedBusiness.name}</h2>
+            <form className="auth-form" onSubmit={handleReviewSubmit}>
+              <div className="field-group">
+                <label className="field-label">Rating</label>
+                <select className="field-input field-select" value={reviewForm.rating} onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}>
+                  {[5,4,3,2,1].map(num => <option key={num} value={num}>{num} Stars</option>)}
+                </select>
+              </div>
+              <div className="field-group">
+                <label className="field-label">Your Experience</label>
+                <textarea className="field-input field-textarea" placeholder="Share your thoughts..." required value={reviewForm.comment} onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})} />
+              </div>
+              <button type="submit" className="btn-primary">Post Review</button>
+              <button type="button" className="btn-nav-logout" style={{width: '100%', marginTop: '10px'}} onClick={() => setSelectedBusiness(null)}>Cancel</button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

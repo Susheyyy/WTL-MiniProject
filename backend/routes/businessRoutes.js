@@ -127,6 +127,42 @@ router.put('/:id', protect, authorize('owner'), async (req, res) => {
 });
 
 /**
+ * @route   GET /api/businesses/user/my-reviews
+ * @desc    [USER END] Get all reviews written by the logged-in user
+ */
+router.get('/user/my-reviews', protect, async (req, res) => {
+  try {
+    const reviews = await Review.find({ user: req.user.id })
+      .populate('business', 'name')
+      .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching your reviews' });
+  }
+});
+
+/**
+ * @route   GET /api/businesses/owner/customer-feedback
+ * @desc    [OWNER END] Get all reviews left on businesses owned by this owner
+ */
+router.get('/owner/customer-feedback', protect, authorize('owner'), async (req, res) => {
+  try {
+    // 1. Find all businesses owned by this user
+    const myBusinesses = await Business.find({ owner: req.user.id });
+    const businessIds = myBusinesses.map(b => b._id);
+
+    // 2. Find reviews where the 'business' ID is in that list
+    const reviews = await Review.find({ business: { $in: businessIds } })
+      .populate('business', 'name')
+      .populate('user', 'name')
+      .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching customer feedback' });
+  }
+});
+
+/**
  * @route   DELETE /api/businesses/:id
  * @desc    Delete a business (owner only, must own it)
  */
@@ -148,18 +184,22 @@ router.delete('/:id', protect, authorize('owner'), async (req, res) => {
 });
 
 /**
- * @route   POST /api/businesses/:id/reviews
- * @desc    Add a review (one per user per business)
+ * @route   GET /api/businesses/my-businesses
+ * @desc    Get all businesses owned by the logged-in user
  */
-
-// Get businesses owned by the current user
 router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
   try {
-    const businesses = await Business.find({ owner: req.user.id });
+    // Finds all businesses where the 'owner' field matches the ID from the JWT token
+    const businesses = await Business.find({ owner: req.user.id }); 
     res.json(businesses);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching your businesses' });
+    res.status(500).json({ message: 'Error fetching your listings', error: err.message });
   }
+});
+
+router.get('/user/my-reviews', protect, async (req, res) => {
+  const reviews = await Review.find({ user: req.user.id }).populate('business', 'name');
+  res.json(reviews);
 });
 
 router.post('/:id/reviews', protect, async (req, res) => {

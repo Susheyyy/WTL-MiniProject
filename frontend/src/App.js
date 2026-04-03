@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import './App.css';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -30,6 +31,11 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/profile" element={
+  <ProtectedRoute>
+    <Profile />
+  </ProtectedRoute>
+} />
       </Routes>
     </Router>
   );

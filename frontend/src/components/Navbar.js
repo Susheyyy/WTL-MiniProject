@@ -19,6 +19,9 @@ const Navbar = () => {
         {user ? (
           <>
             <span className="nav-user">Hi, {user.name}</span>
+            {/* Added My Reviews Profile Link */}
+            <Link to="/profile" className="nav-link">My Reviews</Link>
+            
             {user.role === 'owner' && (
               <Link to="/dashboard" className="nav-link">Dashboard</Link>
             )}
