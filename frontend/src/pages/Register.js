@@ -1,30 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
-import { register } from '../api';
+import { register as registerUser } from '../api';
+import { AuthContext } from '../context/AuthContext';
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'user' });
-  const [error, setError] = useState('');
+  const { login: loginToContext } = useContext(AuthContext); 
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const {
+    register: registerField, 
+    handleSubmit,
+    watch, 
+    formState: { errors }
+  } = useForm({
+    defaultValues: { role: 'user' },
+    mode: "onChange" 
+  });
+
+  const password = watch("password");
+
+  const onSubmit = async (formData) => {
+    setServerError('');
     setLoading(true);
     try {
-      const { data } = await register(formData);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      const { data } = await registerUser(formData);
+      
+      // ✅ FIX: Use the context login function here
+      loginToContext(data.user, data.token); 
+      
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data?.message || `Server error: ${err.response.status}`);
-      } else if (err.request) {
-        setError('Cannot reach the server. Make sure your backend is running on port 5000.');
-      } else {
-        setError(err.message || 'Something went wrong. Please try again.');
-      }
+      setServerError(err.response?.data?.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }
@@ -35,68 +44,77 @@ const Register = () => {
       <div className="auth-card">
         <p className="auth-eyebrow">Get started</p>
         <h2>Create account</h2>
-        <p className="auth-sub">Join LocalDistro and discover what's near you.</p>
+        <p className="auth-sub">Join GoLocal and discover what's near you.</p>
 
-        {error && <div className="alert alert-error" style={{ marginBottom: '16px' }}>{error}</div>}
+        {serverError && <div className="alert alert-error">{serverError}</div>}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit(onSubmit)}>
+          
           <div className="field-group">
-            <label className="field-label" htmlFor="name">Full name</label>
+            <label className="field-label">Full name</label>
             <input
-              id="name"
               type="text"
-              className="field-input"
+              className={`field-input ${errors.name ? 'input-error' : ''}`}
               placeholder="Jane Smith"
-              required
-              autoComplete="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              {...registerField("name", { required: "Full name is required" })}
             />
+            {errors.name && <p className="error-text-small">{errors.name.message}</p>}
           </div>
 
           <div className="field-group">
-            <label className="field-label" htmlFor="email">Email address</label>
+            <label className="field-label">Email address</label>
             <input
-              id="email"
               type="email"
-              className="field-input"
+              className={`field-input ${errors.email ? 'input-error' : ''}`}
               placeholder="you@example.com"
-              required
-              autoComplete="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              {...registerField("email", { 
+                required: "Email is required",
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: "Invalid email format"
+                }
+              })}
             />
+            {errors.email && <p className="error-text-small">{errors.email.message}</p>}
           </div>
 
           <div className="field-group">
-            <label className="field-label" htmlFor="password">Password</label>
+            <label className="field-label">Password</label>
             <input
-              id="password"
               type="password"
-              className="field-input"
-              placeholder="At least 8 characters"
-              required
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className={`field-input ${errors.password ? 'input-error' : ''}`}
+              placeholder="Min. 8 characters"
+              {...registerField("password", { 
+                required: "Password is required", 
+                minLength: { value: 8, message: "Must be at least 8 characters" } 
+              })}
             />
+            {errors.password && <p className="error-text-small">{errors.password.message}</p>}
           </div>
 
           <div className="field-group">
-            <label className="field-label" htmlFor="role">I am a</label>
-            <select
-              id="role"
-              className="field-input field-select"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            >
-              <option value="user">Customer — looking for businesses</option>
-              <option value="owner">Business owner — listing a business</option>
+            <label className="field-label">Confirm Password</label>
+            <input
+              type="password"
+              className={`field-input ${errors.confirmPassword ? 'input-error' : ''}`}
+              placeholder="Repeat password"
+              {...registerField("confirmPassword", { 
+                required: "Please confirm your password",
+                validate: value => value === password || "Passwords do not match"
+              })}
+            />
+            {errors.confirmPassword && <p className="error-text-small">{errors.confirmPassword.message}</p>}
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">I am a</label>
+            <select className="field-input field-select" {...registerField("role")}>
+              <option value="user">Customer - looking for businesses</option>
+              <option value="owner">Business owner - listing a business</option>
             </select>
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading && <span className="spinner" />}
             {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>

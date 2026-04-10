@@ -2,31 +2,34 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config();
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// ── Middleware (order matters: cors + json BEFORE routes) ──
 app.use(cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
 }));
 app.use(express.json());
 
-// ── Routes ─────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/businesses', require('./routes/businessRoutes'));
 
-const rateLimit = require('express-rate-limit');
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // limit each IP to 50 requests per window
+  message: { message: 'Too many login attempts, please try again later.' }
+});
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  message: 'Too many requests from this IP, please try again after 15 minutes'
+  max: 100, // limit each IP to 100 requests per window
+  message: { message: 'Too many requests, please try again later.' }
 });
 
-app.use('/api/', apiLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/businesses', apiLimiter);
 
-// ── DB + Start ─────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     console.log('✅ MongoDB connected');

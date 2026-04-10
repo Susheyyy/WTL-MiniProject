@@ -4,42 +4,63 @@ const Business = require('../models/Business');
 const Review = require('../models/Review');
 const { protect, authorize } = require('../middleware/auth');
 
-/**
- * @route   GET /api/businesses
- * @desc    Discover businesses (filter by location, category, distance)
- */
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Cloudinary Config (Ensure these are in your .env file)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: { 
+    folder: 'local-distro-businesses', 
+    allowed_formats: ['jpg', 'png', 'jpeg'] 
+  },
+});
+
+const upload = multer({ storage: storage });
+
 router.get('/', async (req, res) => {
   try {
-    const { lat, lng, dist = 5000, category } = req.query;
+    const { lat, lng, dist = 5000, category, page = 1, limit = 10 } = req.query;
     let query = {};
+    const skip = (page - 1) * limit;
 
     if (lat && lng) {
+      const radiusInRadians = parseFloat(dist) / 6378100; 
       query.location = {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [parseFloat(lng), parseFloat(lat)],
-          },
-          $maxDistance: parseInt(dist),
-        },
+        $geoWithin: {
+          $centerSphere: [[parseFloat(lng), parseFloat(lat)], radiusInRadians]
+        }
       };
     }
-
+    
     if (category) {
       query.category = { $regex: new RegExp(`^${category}$`, 'i') };
     }
 
-    const businesses = await Business.find(query);
-    res.json(businesses);
+    const businesses = await Business.find(query)
+      .limit(parseInt(limit))
+      .skip(skip);
+      
+    const total = await Business.countDocuments(query);
+
+    res.json({
+      businesses,
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page)
+    });
   } catch (err) {
+    console.error("Geospatial Error:", err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 
-/**
- * @route   GET /api/businesses/:id
- * @desc    Get a single business with its reviews
- */
 router.get('/:id', async (req, res) => {
   try {
     const business = await Business.findById(req.params.id).populate('owner', 'name');
@@ -55,11 +76,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/businesses
- * @desc    Create a new business (owner only)
- */
-router.post('/', protect, authorize('owner'), async (req, res) => {
+router.post('/', protect, authorize('owner'), upload.single('image'), async (req, res) => {
   try {
     const { name, category, description, address, lng, lat } = req.body;
 
@@ -69,11 +86,14 @@ router.post('/', protect, authorize('owner'), async (req, res) => {
 
     const parsedLng = parseFloat(lng);
     const parsedLat = parseFloat(lat);
+    
     if (isNaN(parsedLng) || isNaN(parsedLat) ||
         parsedLng < -180 || parsedLng > 180 ||
         parsedLat < -90 || parsedLat > 90) {
       return res.status(400).json({ message: 'Invalid coordinates' });
     }
+
+    const imageUrl = req.file ? req.file.path : ''; 
 
     const newBusiness = new Business({
       owner: req.user.id,
@@ -81,6 +101,7 @@ router.post('/', protect, authorize('owner'), async (req, res) => {
       category,
       description,
       address,
+      images: imageUrl ? [imageUrl] : [], 
       location: {
         type: 'Point',
         coordinates: [parsedLng, parsedLat],
@@ -94,10 +115,6 @@ router.post('/', protect, authorize('owner'), async (req, res) => {
   }
 });
 
-/**
- * @route   PUT /api/businesses/:id
- * @desc    Update a business (owner only, must own it)
- */
 router.put('/:id', protect, authorize('owner'), async (req, res) => {
   try {
     const business = await Business.findById(req.params.id);
@@ -126,10 +143,6 @@ router.put('/:id', protect, authorize('owner'), async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/businesses/user/my-reviews
- * @desc    [USER END] Get all reviews written by the logged-in user
- */
 router.get('/user/my-reviews', protect, async (req, res) => {
   try {
     const reviews = await Review.find({ user: req.user.id })
@@ -141,17 +154,11 @@ router.get('/user/my-reviews', protect, async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/businesses/owner/customer-feedback
- * @desc    [OWNER END] Get all reviews left on businesses owned by this owner
- */
 router.get('/owner/customer-feedback', protect, authorize('owner'), async (req, res) => {
   try {
-    // 1. Find all businesses owned by this user
     const myBusinesses = await Business.find({ owner: req.user.id });
     const businessIds = myBusinesses.map(b => b._id);
 
-    // 2. Find reviews where the 'business' ID is in that list
     const reviews = await Review.find({ business: { $in: businessIds } })
       .populate('business', 'name')
       .populate('user', 'name')
@@ -162,10 +169,6 @@ router.get('/owner/customer-feedback', protect, authorize('owner'), async (req, 
   }
 });
 
-/**
- * @route   DELETE /api/businesses/:id
- * @desc    Delete a business (owner only, must own it)
- */
 router.delete('/:id', protect, authorize('owner'), async (req, res) => {
   try {
     const business = await Business.findById(req.params.id);
@@ -183,13 +186,8 @@ router.delete('/:id', protect, authorize('owner'), async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/businesses/my-businesses
- * @desc    Get all businesses owned by the logged-in user
- */
 router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
   try {
-    // Finds all businesses where the 'owner' field matches the ID from the JWT token
     const businesses = await Business.find({ owner: req.user.id }); 
     res.json(businesses);
   } catch (err) {
@@ -197,25 +195,18 @@ router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
   }
 });
 
-router.get('/user/my-reviews', protect, async (req, res) => {
-  const reviews = await Review.find({ user: req.user.id }).populate('business', 'name');
-  res.json(reviews);
-});
-
 router.post('/:id/reviews', protect, async (req, res) => {
   try {
     const { rating, comment } = req.body;
     const businessId = req.params.id;
 
-    const parsedRating = Number(rating);
-    if (!parsedRating || parsedRating < 1 || parsedRating > 5) {
-      return res.status(400).json({ message: 'Rating must be a number between 1 and 5' });
-    }
-
     const business = await Business.findById(businessId);
     if (!business) return res.status(404).json({ message: 'Business not found' });
 
-    // Prevent duplicate reviews
+    if (business.owner.toString() === req.user.id) {
+      return res.status(403).json({ message: "Owners cannot review their own business." });
+    }
+
     const existing = await Review.findOne({ user: req.user.id, business: businessId });
     if (existing) {
       return res.status(400).json({ message: 'You have already reviewed this business' });
@@ -224,20 +215,18 @@ router.post('/:id/reviews', protect, async (req, res) => {
     const review = await Review.create({
       user: req.user.id,
       business: businessId,
-      rating: parsedRating,
+      rating: Number(rating),
       comment,
     });
 
     const reviews = await Review.find({ business: businessId });
     const avgRating = reviews.reduce((acc, item) => item.rating + acc, 0) / reviews.length;
-
     await Business.findByIdAndUpdate(businessId, {
       avgRating: parseFloat(avgRating.toFixed(1)),
       reviewCount: reviews.length,
     });
 
-    const populated = await review.populate('user', 'name');
-    res.status(201).json(populated);
+    res.status(201).json(await review.populate('user', 'name'));
   } catch (err) {
     res.status(400).json({ message: 'Error adding review', error: err.message });
   }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { createBusiness } from '../api';
 
 const CATEGORIES = ['Cafe', 'Restaurant', 'Gym', 'Salon', 'Bakery', 'Shop', 'Other'];
 
@@ -13,7 +12,7 @@ const Dashboard = () => {
   const [myBusinesses, setMyBusinesses] = useState([]);
   const [showForm, setShowForm] = useState(false); 
   const [form, setForm] = useState({
-    name: '', category: 'Cafe', description: '', address: '', lng: '', lat: '',
+    name: '', category: 'Cafe', description: '', address: '', lng: '', lat: '', imageFile: null
   });
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
@@ -40,7 +39,19 @@ const Dashboard = () => {
     if (user) loadOwnerBusinesses();
   }, [user]);
 
-  // --- LOGIC ---
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this business? All reviews will be lost.")) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/businesses/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setMyBusinesses(myBusinesses.filter(b => b._id !== id));
+      setMsg({ text: 'Business deleted successfully', type: 'success' });
+    } catch (err) {
+      setMsg({ text: 'Failed to delete business', type: 'error' });
+    }
+  };
+
   const detectLocation = () => {
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
@@ -61,20 +72,34 @@ const Dashboard = () => {
 
   const setField = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
+  // INTEGRATED SUBMIT WITH FORMDATA
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMsg({ text: '', type: '' });
+
+    const formData = new FormData();
+    formData.append('name', form.name);
+    formData.append('category', form.category);
+    formData.append('description', form.description);
+    formData.append('address', form.address);
+    formData.append('lng', form.lng);
+    formData.append('lat', form.lat);
+    if (form.imageFile) {
+      formData.append('image', form.imageFile);
+    }
+
     try {
-      const { data } = await createBusiness({
-        ...form,
-        lng: parseFloat(form.lng),
-        lat: parseFloat(form.lat),
+      const { data } = await axios.post('http://localhost:5000/api/businesses', formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        }
       });
       setMsg({ text: 'Business listed successfully!', type: 'success' });
       setMyBusinesses(prev => [data, ...prev]);
-      setForm({ name: '', category: 'Cafe', description: '', address: '', lng: '', lat: '' });
-      setShowForm(false); // Hide form after success
+      setForm({ name: '', category: 'Cafe', description: '', address: '', lng: '', lat: '', imageFile: null });
+      setShowForm(false); 
     } catch (err) {
       setMsg({ text: err.response?.data?.message || 'Failed to add business.', type: 'error' });
     } finally {
@@ -88,7 +113,7 @@ const Dashboard = () => {
       <h1 className="page-title">Manage your listings</h1>
       <p className="page-sub">View your current businesses or add a new one to the platform.</p>
 
-      {/* 1. THE LISTINGS (Image 3) */}
+      {/* 1. THE LISTINGS */}
       <div style={{ marginTop: '20px' }}>
         <p className="page-eyebrow">Your listings</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
@@ -101,10 +126,16 @@ const Dashboard = () => {
                     {b.category} · {b.address}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--ink-muted)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <span style={{ fontSize: '0.85rem' }}>
                     ★ {b.avgRating || '—'} ({b.reviewCount || 0} reviews)
                   </span>
+                  <button 
+                    onClick={() => handleDelete(b._id)}
+                    style={{ background: 'none', border: 'none', color: 'var(--error-text)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))
@@ -114,34 +145,23 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 2. THE TOGGLE BUTTON */}
       {!showForm && (
-        <button 
-          className="btn-accent" 
-          style={{ marginTop: '32px' }} 
-          onClick={() => setShowForm(true)}
-        >
+        <button className="btn-accent" style={{ marginTop: '32px' }} onClick={() => setShowForm(true)}>
           + Add business
         </button>
       )}
 
-      {/* 3. THE FORM (Image 4 & 5) */}
       {showForm && (
         <div style={{ marginTop: '40px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 className="page-title" style={{ fontSize: '1.5rem' }}>List your business</h2>
-            <button 
-              onClick={() => setShowForm(false)} 
-              style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: '600' }}
-            >
+            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: '600' }}>
               Cancel
             </button>
           </div>
 
           {msg.text && (
-            <div className={`alert alert-${msg.type}`} style={{ margin: '16px 0' }}>
-              {msg.text}
-            </div>
+            <div className={`alert alert-${msg.type}`} style={{ margin: '16px 0' }}>{msg.text}</div>
           )}
 
           <div className="form-card" style={{ marginTop: '16px' }}>
@@ -149,8 +169,7 @@ const Dashboard = () => {
             <form className="dashboard-form" onSubmit={handleSubmit}>
               <div className="field-group">
                 <label className="field-label">Business name</label>
-                <input className="field-input" placeholder="e.g. Blue Bottle Coffee"
-                  value={form.name} onChange={setField('name')} required />
+                <input className="field-input" placeholder="e.g. Blue Bottle Coffee" value={form.name} onChange={setField('name')} required />
               </div>
 
               <div className="field-group">
@@ -160,17 +179,25 @@ const Dashboard = () => {
                 </select>
               </div>
 
+              {/* INTEGRATED IMAGE UPLOAD FIELD */}
+              <div className="field-group">
+                <label className="field-label">Business Image</label>
+                <input 
+                  type="file" 
+                  className="field-input" 
+                  accept="image/*"
+                  onChange={(e) => setForm({...form, imageFile: e.target.files[0]})} 
+                />
+              </div>
+
               <div className="field-group">
                 <label className="field-label">Short description</label>
-                <textarea className="field-input field-textarea"
-                  placeholder="What makes your business special?"
-                  value={form.description} onChange={setField('description')} />
+                <textarea className="field-input field-textarea" placeholder="What makes your business special?" value={form.description} onChange={setField('description')} />
               </div>
 
               <div className="field-group">
                 <label className="field-label">Address</label>
-                <input className="field-input" placeholder="123 Main Street, City"
-                  value={form.address} onChange={setField('address')} required />
+                <input className="field-input" placeholder="123 Main Street, City" value={form.address} onChange={setField('address')} required />
               </div>
 
               <div className="field-group">
@@ -187,14 +214,6 @@ const Dashboard = () => {
                   <div className="location-preview">
                     <span className="location-dot" />
                     <span>{form.lat}°N, {form.lng}°E</span>
-                    <a
-                      href={`https://www.google.com/maps?q=${form.lat},${form.lng}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--accent)', textDecoration: 'none' }}
-                    >
-                      Verify on map ↗
-                    </a>
                   </div>
                 )}
 
