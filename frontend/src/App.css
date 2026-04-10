@@ -175,7 +175,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* ✅ Keeps the entire filter block centered on the page */
   max-width: fit-content; 
   margin: 0 auto 40px;
   padding: 0 32px;
@@ -184,7 +183,6 @@ body {
 .filter-group {
   display: flex;
   align-items: center;
-  /* ✅ Ensures the label and chips stay together as a unit */
   justify-content: flex-start; 
 }
 
@@ -194,7 +192,6 @@ body {
   color: var(--ink-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  /* ✅ Set this to 80px to pull labels closer to the chips */
   width: 85px; 
   flex-shrink: 0;
   text-align: left;
@@ -203,7 +200,6 @@ body {
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  /* ✅ This handles the gap between chips perfectly */
   gap: 10px; 
   align-items: center;
 }
@@ -232,8 +228,8 @@ body {
   background: var(--ink);
   color: white;
   border-color: var(--ink);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Adds depth */
-  transform: translateY(-1px); /* Subtle lift effect */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+  transform: translateY(-1px); 
 }
 
 .chip:hover {
@@ -243,7 +239,7 @@ body {
 }
 
 .chip.active:hover {
-  background: var(--ink); /* Keeps active chip dark even on hover */
+  background: var(--ink); 
   color: white;
 }
 
@@ -644,7 +640,7 @@ body {
 .modal-overlay .auth-card {
   max-width: 460px;
   padding: 40px;
-  border: none; /* Let the shadow do the work */
+  border: none;
 }
 
 @keyframes slideIn {
@@ -652,7 +648,6 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Business Detail Styles */
 .business-meta {
   display: flex;
   gap: 24px;
@@ -680,13 +675,11 @@ body {
   margin-bottom: 8px;
   text-align: center;
 }
-/* Make the star rating select look better */
 .rating-select {
   font-weight: 600;
   color: var(--accent);
 }
 
-/* Buttons in Modal */
 .modal-actions {
   display: flex;
   flex-direction: column;

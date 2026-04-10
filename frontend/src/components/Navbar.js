@@ -18,7 +18,6 @@ const Navbar = () => {
       <div className="nav-links">
         <Link to="/" className="nav-link">Home</Link>
         
-        {/* Feature A: Always visible '+ Add Business' */}
         <Link to="/dashboard" className="nav-link" style={{color: 'var(--accent)', fontWeight: '600'}}>
           + Add Business
         </Link>
@@ -26,7 +25,7 @@ const Navbar = () => {
         {user ? (
           <>
             <Link to="/profile" className="nav-link">My Account</Link>
-            <span className="nav-user">| {user.name}</span>
+            <span className="nav-user">{user.name}</span>
             <button onClick={logout} className="btn-nav-logout">Log out</button>
           </>
         ) : (

@@ -8,7 +8,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
 
-  // --- STATE ---
   const [myBusinesses, setMyBusinesses] = useState([]);
   const [showForm, setShowForm] = useState(false); 
   const [form, setForm] = useState({
@@ -18,13 +17,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
 
-  // --- AUTH GUARD ---
   useEffect(() => {
     if (!user) navigate('/login');
     else if (user.role !== 'owner') navigate('/');
   }, [navigate, user]);
 
-  // --- LOAD OWNER LISTINGS ---
   useEffect(() => {
     const loadOwnerBusinesses = async () => {
       try {
@@ -72,7 +69,6 @@ const Dashboard = () => {
 
   const setField = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
-  // INTEGRATED SUBMIT WITH FORMDATA
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -109,11 +105,8 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-wrapper">
-      <p className="page-eyebrow">Owner dashboard</p>
       <h1 className="page-title">Manage your listings</h1>
-      <p className="page-sub">View your current businesses or add a new one to the platform.</p>
 
-      {/* 1. THE LISTINGS */}
       <div style={{ marginTop: '20px' }}>
         <p className="page-eyebrow">Your listings</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
@@ -179,7 +172,6 @@ const Dashboard = () => {
                 </select>
               </div>
 
-              {/* INTEGRATED IMAGE UPLOAD FIELD */}
               <div className="field-group">
                 <label className="field-label">Business Image</label>
                 <input 

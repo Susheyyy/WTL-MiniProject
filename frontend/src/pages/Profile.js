@@ -7,10 +7,8 @@ const Profile = () => {
   const [myBusinesses, setMyBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // ✅ NEW: State to track which business is clicked
   const [selectedBusiness, setSelectedBusiness] = useState(null);
 
-  // ✅ FIX: Get user safely and memoize it to prevent the infinite loop
   const user = useMemo(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -39,10 +37,8 @@ const Profile = () => {
     };
 
     if (user) loadProfileData();
-    // ✅ FIX: Dependency array uses user?.id (a string) instead of the whole object
   }, [user?._id, user?.id]);
 
-  // ✅ NEW: Logic to filter reviews based on clicked business
   const filteredReviews = selectedBusiness 
     ? reviews.filter(rev => rev.business?._id === selectedBusiness)
     : reviews;
@@ -51,7 +47,6 @@ const Profile = () => {
 
   return (
     <div className="dashboard-wrapper">
-      <p className="page-eyebrow">Account Settings</p>
       <h1 className="page-title">{user.role === 'owner' ? 'Owner Dashboard' : 'My Reviews'}</h1>
 
       {loading ? (
@@ -78,7 +73,6 @@ const Profile = () => {
                     <div 
                       key={biz._id} 
                       className="form-card" 
-                      // ✅ NEW: Toggle selection on click
                       onClick={() => setSelectedBusiness(biz._id === selectedBusiness ? null : biz._id)}
                       style={{ 
                         padding: '16px', 
@@ -95,7 +89,7 @@ const Profile = () => {
                             to={`/business/${biz._id}`} 
                             className="view-link" 
                             style={{ fontSize: '0.8rem' }}
-                            onClick={(e) => e.stopPropagation()} // Prevents filter toggle when clicking the link
+                            onClick={(e) => e.stopPropagation()} 
                          >
                             View Page
                          </Link>
