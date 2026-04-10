@@ -61,6 +61,41 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/user/my-reviews', protect, async (req, res) => {
+  try {
+    const reviews = await Review.find({ user: req.user.id })
+      .populate('business', 'name')
+      .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching your reviews' });
+  }
+});
+
+router.get('/owner/customer-feedback', protect, authorize('owner'), async (req, res) => {
+  try {
+    const myBusinesses = await Business.find({ owner: req.user.id });
+    const businessIds = myBusinesses.map(b => b._id);
+
+    const reviews = await Review.find({ business: { $in: businessIds } })
+      .populate('business', 'name')
+      .populate('user', 'name')
+      .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching customer feedback' });
+  }
+});
+
+router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
+  try {
+    const businesses = await Business.find({ owner: req.user.id }); 
+    res.json(businesses);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching your listings', error: err.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const business = await Business.findById(req.params.id).populate('owner', 'name');
@@ -143,32 +178,6 @@ router.put('/:id', protect, authorize('owner'), async (req, res) => {
   }
 });
 
-router.get('/user/my-reviews', protect, async (req, res) => {
-  try {
-    const reviews = await Review.find({ user: req.user.id })
-      .populate('business', 'name')
-      .sort({ createdAt: -1 });
-    res.json(reviews);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching your reviews' });
-  }
-});
-
-router.get('/owner/customer-feedback', protect, authorize('owner'), async (req, res) => {
-  try {
-    const myBusinesses = await Business.find({ owner: req.user.id });
-    const businessIds = myBusinesses.map(b => b._id);
-
-    const reviews = await Review.find({ business: { $in: businessIds } })
-      .populate('business', 'name')
-      .populate('user', 'name')
-      .sort({ createdAt: -1 });
-    res.json(reviews);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching customer feedback' });
-  }
-});
-
 router.delete('/:id', protect, authorize('owner'), async (req, res) => {
   try {
     const business = await Business.findById(req.params.id);
@@ -183,15 +192,6 @@ router.delete('/:id', protect, authorize('owner'), async (req, res) => {
     res.json({ message: 'Business deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting business', error: err.message });
-  }
-});
-
-router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
-  try {
-    const businesses = await Business.find({ owner: req.user.id }); 
-    res.json(businesses);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching your listings', error: err.message });
   }
 });
 

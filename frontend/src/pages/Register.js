@@ -28,7 +28,6 @@ const Register = () => {
     try {
       const { data } = await registerUser(formData);
       
-      // ✅ FIX: Use the context login function here
       loginToContext(data.user, data.token); 
       
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');

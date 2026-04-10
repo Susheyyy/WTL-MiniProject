@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import BusinessDetail from './pages/BusinessDetail'; 
 import './App.css';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -23,6 +24,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/business/:id" element={<BusinessDetail />} />
+
         <Route
           path="/dashboard"
           element={
@@ -32,10 +35,10 @@ function App() {
           }
         />
         <Route path="/profile" element={
-  <ProtectedRoute>
-    <Profile />
-  </ProtectedRoute>
-} />
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
       </Routes>
     </Router>
   );

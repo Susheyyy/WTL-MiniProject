@@ -47,11 +47,10 @@ const Home = () => {
         handleAddressSearch();
       }
     }, 500);
-
     return () => clearTimeout(delayDebounceFn);
   }, [addressQuery]);
 
-const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
+  const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
     setLoading(true);
     setFetchError('');
     fetchBusinesses(lat, lng, dist, category)
@@ -194,7 +193,7 @@ const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
                 <Popup>
                   <strong>{b.name}</strong><br/>
                   {b.address}<br/>
-                  {user && <button onClick={() => setSelectedBusiness(b)}>Write Review</button>}
+                  {user && user.role !== 'owner' && <button onClick={() => setSelectedBusiness(b)}>Write Review</button>}
                 </Popup>
               </Marker>
             ))}
@@ -205,7 +204,6 @@ const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
           {!loading && businesses.map((b) => (
             <div key={b._id} className="card">
               <div className="card-thumb" style={{ overflow: 'hidden', background: '#f5ece0' }}>
-                {/* 3. INTEGRATED IMAGE DISPLAY LOGIC */}
                 {b.images && b.images.length > 0 ? (
                   <img src={b.images[0]} alt={b.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                 ) : (
@@ -217,10 +215,10 @@ const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
                 <h3 className="card-title">{b.name}</h3>
                 <p className="card-desc">{b.description}</p>
                 <div className="card-footer">
-                  <span>📍 {b.address}</span>
-                  <span className="card-rating">★ {b.avgRating ? Number(b.avgRating).toFixed(1) : '—'}</span>
+                  <span style={{maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>📍 {b.address}</span>
+                  <span className="card-rating"><span className="star">★</span> {b.avgRating ? Number(b.avgRating).toFixed(1) : '—'}</span>
                 </div>
-                {user && (
+                {user && user.role !== 'owner' && (
                   <button className="btn-accent" style={{ marginTop: '15px', width: '100%' }} onClick={() => setSelectedBusiness(b)}>
                     Write a Review
                   </button>
@@ -233,15 +231,43 @@ const doSearch = (lat, lng, category = activeCategory, dist = activeDist) => {
 
       {selectedBusiness && (
         <div className="modal-overlay">
-          <div className="auth-card" style={{ maxWidth: '450px' }}>
-            <h2 className="page-title">Review {selectedBusiness.name}</h2>
+          <div className="auth-card">
+            <h2 className="review-form-title">Review {selectedBusiness.name}</h2>
+            <p className="review-form-sub">Share your thoughts with the GoLocal community.</p>
+            
             <form className="auth-form" onSubmit={handleReviewSubmit}>
-              <select value={reviewForm.rating} onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}>
-                {[5,4,3,2,1].map(num => <option key={num} value={num}>{num} Stars</option>)}
-              </select>
-              <textarea placeholder="Share your thoughts..." required value={reviewForm.comment} onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})} />
-              <button type="submit" className="btn-primary">Post Review</button>
-              <button type="button" onClick={() => setSelectedBusiness(null)}>Cancel</button>
+              <div className="field-group">
+                <label className="field-label">Rating</label>
+                <select 
+                  className="field-select rating-select"
+                  value={reviewForm.rating} 
+                  onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}
+                >
+                  <option value="5">5 Stars — Excellent</option>
+                  <option value="4">4 Stars — Good</option>
+                  <option value="3">3 Stars — Average</option>
+                  <option value="2">2 Stars — Poor</option>
+                  <option value="1">1 Star — Terrible</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label className="field-label">Your Review</label>
+                <textarea 
+                  className="field-textarea review-text"
+                  placeholder="Tell us about your experience..." 
+                  required 
+                  value={reviewForm.comment} 
+                  onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})} 
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="submit" className="btn-post-review">Post Review</button>
+                <button type="button" className="btn-cancel-review" onClick={() => setSelectedBusiness(null)}>
+                  Cancel
+                </button>
+              </div>
             </form>
           </div>
         </div>

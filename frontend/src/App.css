@@ -555,6 +555,25 @@ body {
   border-top-color: var(--accent);
 }
 
+.review-form-sub {
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+.field-select.rating-select {
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background-color: var(--accent-light);
+  border-color: transparent;
+}
+
+.field-textarea.review-text {
+  min-height: 120px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
 .listing-row {
   display: flex;
   justify-content: space-between;
@@ -579,11 +598,87 @@ body {
   backdrop-filter: blur(4px);
 }
 
+.btn-post-review {
+  background: var(--ink);
+  color: white;
+  padding: 14px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-post-review:hover {
+  background: var(--accent);
+}
+
+
 .modal-overlay .auth-card {
-  animation: slideIn 0.3s ease-out;
+  max-width: 460px;
+  padding: 40px;
+  border: none; /* Let the shadow do the work */
 }
 
 @keyframes slideIn {
   from { transform: translateY(-20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* Business Detail Styles */
+.business-meta {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-count {
+  color: var(--ink-muted);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.review-form-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  margin-bottom: 8px;
+  text-align: center;
+}
+/* Make the star rating select look better */
+.rating-select {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Buttons in Modal */
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-cancel-review {
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 10px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.btn-cancel-review:hover {
+  color: var(--error-text);
 }
