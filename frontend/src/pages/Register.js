@@ -41,9 +41,7 @@ const Register = () => {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <p className="auth-eyebrow">Get started</p>
         <h2>Create account</h2>
-        <p className="auth-sub">Join GoLocal and discover what's near you.</p>
 
         {serverError && <div className="alert alert-error">{serverError}</div>}
 
@@ -54,7 +52,7 @@ const Register = () => {
             <input
               type="text"
               className={`field-input ${errors.name ? 'input-error' : ''}`}
-              placeholder="Jane Smith"
+              placeholder="Enter Name"
               {...registerField("name", { required: "Full name is required" })}
             />
             {errors.name && <p className="error-text-small">{errors.name.message}</p>}
@@ -65,7 +63,7 @@ const Register = () => {
             <input
               type="email"
               className={`field-input ${errors.email ? 'input-error' : ''}`}
-              placeholder="you@example.com"
+              placeholder="Enter Email ID"
               {...registerField("email", { 
                 required: "Email is required",
                 pattern: {
@@ -82,7 +80,7 @@ const Register = () => {
             <input
               type="password"
               className={`field-input ${errors.password ? 'input-error' : ''}`}
-              placeholder="Min. 8 characters"
+              placeholder="Enter password (Minimum 8 characters)"
               {...registerField("password", { 
                 required: "Password is required", 
                 minLength: { value: 8, message: "Must be at least 8 characters" } 

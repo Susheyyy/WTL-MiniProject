@@ -14,12 +14,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const CATEGORIES = ['Cafe', 'Restaurant', 'Gym', 'Salon', 'Bakery', 'Shop'];
-const CATEGORY_EMOJI = {
-  Cafe: '☕', Restaurant: '🍽️', Gym: '💪',
-  Salon: '✂️', Bakery: '🥐', Shop: '🛍️', Other: '📦',
-};
-
+const CATEGORIES = ['Cafe', 'Restaurant', 'Gym', 'Salon', 'Bakery', 'Shop', 'Other'];
 const DISTANCES = [
   { label: '1 km', value: 1000 },
   { label: '5 km', value: 5000 },
@@ -120,19 +115,18 @@ const Home = () => {
   return (
     <>
       <div className="home-hero">
-        <h1>Find what's <em>near you.</em></h1>
-        <p>Discover local businesses, read reviews, and explore your neighbourhood with ease.</p>
-        
+        <h1>Find what's <em>near you</em></h1>
+               
         <div className="search-bar">
           <input 
             type="text" 
-            placeholder="Enter location (e.g. Seawoods)" 
+            placeholder="Enter location" 
             value={addressQuery}
             onChange={(e) => setAddressQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAddressSearch()}
           />
           <button className="btn-search" onClick={handleAddressSearch} disabled={loading}>
-            {loading ? 'Searching…' : '🔍 Search'}
+            {loading ? 'Searching…' : ' Search'}
           </button>
         </div>
         <button 
@@ -140,12 +134,14 @@ const Home = () => {
            className="btn-locate-text"
            style={{marginTop: '12px', background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: '500'}}
         >
-           📍 or Use Current Location
+           Use Current Location
         </button>
       </div>
 
       <div className="filter-row">
+        <div className="filter-group">
         <span className="filter-label">Category</span>
+        <div className="filter-group">
         {CATEGORIES.map(cat => (
           <button key={cat} className={`chip${activeCategory === cat ? ' active' : ''}`}
             onClick={() => {
@@ -153,10 +149,14 @@ const Home = () => {
                 setActiveCategory(next);
                 if (userCoords) doSearch(userCoords.lat, userCoords.lng, next);
             }}>
-            {CATEGORY_EMOJI[cat]} {cat}
+            {[cat]} 
           </button>
-        ))}
-        <span className="filter-label" style={{ marginLeft: '8px' }}>Radius</span>
+           ))}
+          </div>
+  </div>
+       <div className="filter-group">
+       <span className="filter-label">Radius</span>
+       <div className="filter-chips">
         {DISTANCES.map(d => (
           <button key={d.value} className={`chip${activeDist === d.value ? ' active' : ''}`}
             onClick={() => {
@@ -167,20 +167,21 @@ const Home = () => {
           </button>
         ))}
       </div>
+      </div>
+      </div>
 
       <div className="businesses-section">
         {fetchError && <div className="alert alert-error" style={{ marginBottom: '24px' }}>{fetchError}</div>}
 
         {loading && (
           <div className="empty-state">
-            <div className="empty-icon">🔍</div>
             <h3>Finding businesses…</h3>
           </div>
         )}
 
         {!loading && searched && businesses.length === 0 && (
           <div className="empty-state">
-            <div className="empty-icon">🗺️</div>
+
             <h3>Nothing found nearby</h3>
           </div>
         )}
@@ -207,7 +208,7 @@ const Home = () => {
                 {b.images && b.images.length > 0 ? (
                   <img src={b.images[0]} alt={b.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                 ) : (
-                  <span style={{ fontSize: '2.8rem' }}>{CATEGORY_EMOJI[b.category] || '📍'}</span>
+                  <span style={{ fontSize: '2.8rem' }}>{[b.category] || '📍'}</span>
                 )}
               </div>
               <div className="card-body">
@@ -243,11 +244,11 @@ const Home = () => {
                   value={reviewForm.rating} 
                   onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}
                 >
-                  <option value="5">5 Stars — Excellent</option>
-                  <option value="4">4 Stars — Good</option>
-                  <option value="3">3 Stars — Average</option>
-                  <option value="2">2 Stars — Poor</option>
-                  <option value="1">1 Star — Terrible</option>
+                  <option value="5">5 Stars - Excellent</option>
+                  <option value="4">4 Stars - Good</option>
+                  <option value="3">3 Stars - Average</option>
+                  <option value="2">2 Stars - Poor</option>
+                  <option value="1">1 Star - Terrible</option>
                 </select>
               </div>
 

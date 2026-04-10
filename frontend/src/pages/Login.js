@@ -19,10 +19,8 @@ const Login = () => {
       navigate(data.user.role === 'owner' ? '/dashboard' : '/');
     } catch (err) {
       if (err.response) {
-        // Server responded with an error status
         setError(err.response.data?.message || `Server error: ${err.response.status}`);
       } else if (err.request) {
-        // Request was made but no response received — server is down or CORS blocked
         setError('Cannot reach the server. Make sure your backend is running on port 5000.');
       } else {
         setError(err.message || 'Something went wrong. Please try again.');
@@ -35,9 +33,7 @@ const Login = () => {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <p className="auth-eyebrow">Welcome back</p>
         <h2>Sign in</h2>
-        <p className="auth-sub">Good to see you again. Enter your details below.</p>
 
         {error && <div className="alert alert-error" style={{ marginBottom: '16px' }}>{error}</div>}
 
@@ -48,7 +44,7 @@ const Login = () => {
               id="email"
               type="email"
               className="field-input"
-              placeholder="you@example.com"
+              placeholder="Enter Email ID"
               required
               autoComplete="email"
               value={formData.email}
