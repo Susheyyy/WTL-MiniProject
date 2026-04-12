@@ -16,7 +16,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const CATEGORIES = ['Cafe', 'Restaurant', 'Gym', 'Salon', 'Bakery', 'Shop', 'Other'];
+const CATEGORIES = ['Food' , 'Cafe' , 'Stationery' , 'Hostel/PG' , 'Gym', 'Shop' , 'Other'];
 const DISTANCES = [
   { label: '1 km', value: 1000 },
   { label: '5 km', value: 5000 },

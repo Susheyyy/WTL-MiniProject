@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const CATEGORIES = ['Cafe', 'Restaurant', 'Gym', 'Salon', 'Bakery', 'Shop', 'Other'];
+const CATEGORIES = ['Food' , 'Cafe' , 'Stationery' , 'Hostel/PG' , 'Gym', 'Shop' , 'Other'];
 
 const Dashboard = () => {
   const navigate = useNavigate();
