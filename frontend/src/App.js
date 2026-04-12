@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import BusinessDetail from './pages/BusinessDetail'; 
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -19,6 +20,23 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 function App() {
   return (
     <Router>
+        <Toaster position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            fontFamily: 'var(--font-body)',
+            borderRadius: 'var(--radius)',
+            background: 'var(--ink)',
+            color: '#fff',
+          },
+          success: {
+            iconTheme: {
+              primary: 'var(--accent)',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />

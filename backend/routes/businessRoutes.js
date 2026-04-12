@@ -97,15 +97,26 @@ router.get('/my-businesses', protect, authorize('owner'), async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
+    const { id } = req.params;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5; 
+    const skip = (page - 1) * limit;
+
     const business = await Business.findById(req.params.id).populate('owner', 'name');
     if (!business) return res.status(404).json({ message: 'Business not found' });
 
-    const reviews = await Review.find({ business: req.params.id })
-      .populate('user', 'name')
-      .sort({ createdAt: -1 });
+const reviews = await Review.find({ business: id })
+      .populate('user', 'name') 
+      .sort({ createdAt: -1 })  
+      .skip(skip)
+      .limit(limit);
 
-    res.json({ ...business.toObject(), reviews });
-  } catch (err) {
+      const totalReviews = await Review.countDocuments({ business: id });
+
+    res.json({ business: business, reviews, totalPages: Math.ceil(totalReviews / limit), currentPage: page });
+  }
+   catch (err) {
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });

@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { toast} from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 let DefaultIcon = L.icon({
     iconUrl: markerIcon,
@@ -84,18 +86,22 @@ const Home = () => {
     }
   };
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await addReview(selectedBusiness._id, reviewForm);
-      alert("Review posted successfully!");
-      setSelectedBusiness(null);
-      setReviewForm({ rating: 5, comment: '' });
-      if (userCoords) doSearch(userCoords.lat, userCoords.lng); 
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to post review");
-    }
-  };
+const handleReviewSubmit = async (e) => {
+  e.preventDefault();
+  const loadingToast = toast.loading('Posting your review...'); 
+  try {
+    await addReview(selectedBusiness._id, reviewForm);
+    
+    toast.success('Review posted successfully!', { id: loadingToast }); 
+    setSelectedBusiness(null);
+    setReviewForm({ rating: 5, comment: '' });
+    if (userCoords) doSearch(userCoords.lat, userCoords.lng); 
+    
+  } catch (err) {
+    const errorMsg = err.response?.data?.message || "Failed to post review";
+    toast.error(errorMsg, { id: loadingToast }); 
+  }
+};
 
   const getNearby = () => {
     setLoading(true);
@@ -112,11 +118,10 @@ const Home = () => {
     );
   };
 
-  return (
+return (
     <>
       <div className="home-hero">
         <h1>Find what's <em>near you</em></h1>
-               
         <div className="search-bar">
           <input 
             type="text" 
@@ -129,62 +134,47 @@ const Home = () => {
             {loading ? 'Searching…' : ' Search'}
           </button>
         </div>
-        <button 
-           onClick={getNearby} 
-           className="btn-locate-text"
-           style={{marginTop: '12px', background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: '500'}}
-        >
-           Use Current Location
+        <button onClick={getNearby} className="btn-locate-text" style={{marginTop: '12px', background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: '500'}}>
+            Use Current Location
         </button>
       </div>
 
       <div className="filter-row">
         <div className="filter-group">
-        <span className="filter-label">Category</span>
-        <div className="filter-group">
-        {CATEGORIES.map(cat => (
-          <button key={cat} className={`chip${activeCategory === cat ? ' active' : ''}`}
-            onClick={() => {
-                const next = activeCategory === cat ? '' : cat;
-                setActiveCategory(next);
-                if (userCoords) doSearch(userCoords.lat, userCoords.lng, next);
-            }}>
-            {[cat]} 
-          </button>
-           ))}
+          <span className="filter-label">Category</span>
+          <div className="filter-chips">
+            {CATEGORIES.map(cat => (
+              <button key={cat} className={`chip${activeCategory === cat ? ' active' : ''}`}
+                onClick={() => {
+                    const next = activeCategory === cat ? '' : cat;
+                    setActiveCategory(next);
+                    if (userCoords) doSearch(userCoords.lat, userCoords.lng, next);
+                }}>
+                {cat} 
+              </button>
+            ))}
           </div>
-  </div>
-       <div className="filter-group">
-       <span className="filter-label">Radius</span>
-       <div className="filter-chips">
-        {DISTANCES.map(d => (
-          <button key={d.value} className={`chip${activeDist === d.value ? ' active' : ''}`}
-            onClick={() => {
-                setActiveDist(d.value);
-                if (userCoords) doSearch(userCoords.lat, userCoords.lng, activeCategory, d.value);
-            }}>
-            {d.label}
-          </button>
-        ))}
-      </div>
-      </div>
+        </div>
+        <div className="filter-group">
+          <span className="filter-label">Radius</span>
+          <div className="filter-chips">
+            {DISTANCES.map(d => (
+              <button key={d.value} className={`chip${activeDist === d.value ? ' active' : ''}`}
+                onClick={() => {
+                    setActiveDist(d.value);
+                    if (userCoords) doSearch(userCoords.lat, userCoords.lng, activeCategory, d.value);
+                }}>
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="businesses-section">
         {fetchError && <div className="alert alert-error" style={{ marginBottom: '24px' }}>{fetchError}</div>}
-
-        {loading && (
-          <div className="empty-state">
-            <h3>Finding businesses…</h3>
-          </div>
-        )}
-
-        {!loading && searched && businesses.length === 0 && (
-          <div className="empty-state">
-
-            <h3>Nothing found nearby</h3>
-          </div>
-        )}
+        {loading && <div className="empty-state"><h3>Finding businesses…</h3></div>}
+        {!loading && searched && businesses.length === 0 && <div className="empty-state"><h3>Nothing found nearby</h3></div>}
 
         {!loading && userCoords && businesses.length > 0 && (
           <MapContainer center={[userCoords.lat, userCoords.lng]} zoom={13} style={{ height: '400px', borderRadius: '15px', marginBottom: '30px' }}>
@@ -204,27 +194,31 @@ const Home = () => {
         <div className="business-grid">
           {!loading && businesses.map((b) => (
             <div key={b._id} className="card">
-              <div className="card-thumb" style={{ overflow: 'hidden', background: '#f5ece0' }}>
-                {b.images && b.images.length > 0 ? (
-                  <img src={b.images[0]} alt={b.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-                ) : (
-                  <span style={{ fontSize: '2.8rem' }}>{[b.category] || '📍'}</span>
-                )}
-              </div>
-              <div className="card-body">
-                <span className="category-badge">{b.category}</span>
-                <h3 className="card-title">{b.name}</h3>
-                <p className="card-desc">{b.description}</p>
-                <div className="card-footer">
-                  <span style={{maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>📍 {b.address}</span>
-                  <span className="card-rating"><span className="star">★</span> {b.avgRating ? Number(b.avgRating).toFixed(1) : '—'}</span>
+              <Link to={`/business/${b._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="card-thumb" style={{ overflow: 'hidden', background: '#f5ece0' }}>
+                  {b.images && b.images.length > 0 ? (
+                    <img src={b.images[0]} alt={b.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    <span style={{ fontSize: '2.8rem' }}>📍</span>
+                  )}
                 </div>
-                {user && user.role !== 'owner' && (
+                <div className="card-body" style={{ paddingBottom: user ? '0' : '18px' }}>
+                  <span className="category-badge">{b.category}</span>
+                  <h3 className="card-title">{b.name}</h3>
+                  <p className="card-desc">{b.description}</p>
+                  <div className="card-footer">
+                    <span style={{maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>📍 {b.address}</span>
+                    <span className="card-rating"><span className="star">★</span> {b.avgRating ? Number(b.avgRating).toFixed(1) : '—'}</span>
+                  </div>
+                </div>
+              </Link>
+              {user && (
+                <div className="card-action" style={{ padding: '0 18px 18px' }}>
                   <button className="btn-accent" style={{ marginTop: '15px', width: '100%' }} onClick={() => setSelectedBusiness(b)}>
                     Write a Review
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -235,15 +229,10 @@ const Home = () => {
           <div className="auth-card">
             <h2 className="review-form-title">Review {selectedBusiness.name}</h2>
             <p className="review-form-sub">Share your thoughts with the GoLocal community.</p>
-            
             <form className="auth-form" onSubmit={handleReviewSubmit}>
               <div className="field-group">
                 <label className="field-label">Rating</label>
-                <select 
-                  className="field-select rating-select"
-                  value={reviewForm.rating} 
-                  onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}
-                >
+                <select className="field-select rating-select" value={reviewForm.rating} onChange={(e) => setReviewForm({...reviewForm, rating: e.target.value})}>
                   <option value="5">5 Stars - Excellent</option>
                   <option value="4">4 Stars - Good</option>
                   <option value="3">3 Stars - Average</option>
@@ -251,23 +240,13 @@ const Home = () => {
                   <option value="1">1 Star - Terrible</option>
                 </select>
               </div>
-
               <div className="field-group">
                 <label className="field-label">Your Review</label>
-                <textarea 
-                  className="field-textarea review-text"
-                  placeholder="Tell us about your experience..." 
-                  required 
-                  value={reviewForm.comment} 
-                  onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})} 
-                />
+                <textarea className="field-textarea review-text" placeholder="Tell us about your experience..." required value={reviewForm.comment} onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})} />
               </div>
-
               <div className="modal-actions">
                 <button type="submit" className="btn-post-review">Post Review</button>
-                <button type="button" className="btn-cancel-review" onClick={() => setSelectedBusiness(null)}>
-                  Cancel
-                </button>
+                <button type="button" className="btn-cancel-review" onClick={() => setSelectedBusiness(null)}>Cancel</button>
               </div>
             </form>
           </div>

@@ -18,9 +18,11 @@ const Navbar = () => {
       <div className="nav-links">
         <Link to="/" className="nav-link">Home</Link>
         
-        <Link to="/dashboard" className="nav-link" style={{color: 'var(--accent)', fontWeight: '600'}}>
-          + Add Business
-        </Link>
+       {(!user || user.role === 'owner') && (
+    <Link to="/dashboard" className="nav-link accent-text">
+      + Add Business
+    </Link>
+  )}
 
         {user ? (
           <>

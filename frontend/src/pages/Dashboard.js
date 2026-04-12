@@ -201,7 +201,7 @@ const Dashboard = () => {
                 </div>
 
                 {!form.lat ? (
-                  <div className="location-empty">No location set — click "Use my location" or enter below</div>
+                  <div className="location-empty">No location set - click "Use my location" or enter below</div>
                 ) : (
                   <div className="location-preview">
                     <span className="location-dot" />

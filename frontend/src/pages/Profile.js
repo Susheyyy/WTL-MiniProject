@@ -39,6 +39,7 @@ const Profile = () => {
     if (user) loadProfileData();
   }, [user?._id, user?.id]);
 
+  // Logic to filter the review list based on the owner's selection
   const filteredReviews = selectedBusiness 
     ? reviews.filter(rev => rev.business?._id === selectedBusiness)
     : reviews;
@@ -88,7 +89,7 @@ const Profile = () => {
                          <Link 
                             to={`/business/${biz._id}`} 
                             className="view-link" 
-                            style={{ fontSize: '0.8rem' }}
+                            style={{ fontSize: '0.8rem' , background: 'none', border: 'none', color: 'var(--accent)', textDecoration: 'none', cursor: 'pointer' }}
                             onClick={(e) => e.stopPropagation()} 
                          >
                             View Page
@@ -107,9 +108,10 @@ const Profile = () => {
             <h2 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
               {selectedBusiness ? `Reviews for Selected Business` : (user.role === 'owner' ? 'Recent Customer Feedback' : 'Your Review History')}
             </h2>
+            
             {filteredReviews.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {filteredReviews.map(rev => (
+                {(selectedBusiness ? filteredReviews : filteredReviews.slice(0, 5)).map(rev => (
                   <div key={rev._id} className="form-card" style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <h3 style={{ fontSize: '1rem', color: 'var(--accent)' }}>{rev.business?.name}</h3>
@@ -122,6 +124,12 @@ const Profile = () => {
                     </p>
                   </div>
                 ))}
+
+                {!selectedBusiness && filteredReviews.length > 5 && (
+                   <p style={{ textAlign: 'center', color: 'var(--ink-muted)', fontSize: '0.85rem', marginTop: '10px' }}>
+                     Showing the 5 most recent reviews. Click <strong>"View Page"</strong> on a business to see full history.
+                   </p>
+                )}
               </div>
             ) : (
               <div className="empty-state">No reviews found for this selection.</div>
